@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Subjective Speech Intelligibility Assessment</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 20px;
+      background: #f6f6f6;
+      color: #222;
+    }
+    h1 {
+      margin-bottom: 12px;
+      text-align: center;
+    }
+    .instructions {
+      margin: 0 auto 64px;
+      max-width: max-content;
+      white-space: nowrap;
+      text-align: center;
+      font-size: 0.95rem;
+      color: #555;
+    }
+    .chart {
+      display: grid;
+      gap: 8px;
+    }
+    .row {
+      display: grid;
+      grid-template-columns: 64px repeat(20, minmax(36px, 1fr));
+      gap: 8px;
+      align-items: center;
+    }
+    .row-label {
+      font-weight: bold;
+      text-align: right;
+      padding-right: 8px;
+      color: #333;
+    }
+    .seat {
+      min-height: 48px;
+      border: 1px solid #000000;
+      background: #ffffff;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      padding: 6px 4px 10px;
+      position: relative;
+      transform: rotate(180deg);
+      transition: transform 0.15s ease, box-shadow 0.15s ease;
+      cursor: default;
+      border-radius: 28% 28% 60% 60% / 20% 20% 70% 70%;
+      clip-path: polygon(0% 0%, 100% 0%, 100% 75%, 75% 100%, 25% 100%, 0% 75%);
+    }
+    .seat:not(.empty):not(.spacer):hover {
+      transform: rotate(180deg) translateY(-2px);
+      box-shadow: 0 10px 24px rgba(0,0,0,0.08);
+    }
+    .seat.empty {
+      background: #ffffff;
+      border: 1px solid #cccccc;
+    }
+    .seat.spacer {
+      background: transparent;
+      border-color: transparent;
+      pointer-events: none;
+    }
+    .seat .seat-number {
+      font-size: 0.85rem;
+      color: #333;
+      margin-bottom: 4px;
+    }
+    .seat .grade {
+      font-size: 0.95rem;
+      font-weight: bold;
+      margin-bottom: 4px;
+      transform: rotate(-180deg);
+    }
+    .seat .score-label {
+      font-size: 0.82rem;
+      color: #444;
+    }
+    #global-tooltip {
+      position: fixed;
+      width: 200px;
+      background: rgba(34,34,34,0.95);
+      color: #fff;
+      border-radius: 8px;
+      padding: 10px;
+      box-shadow: 0 12px 28px rgba(0,0,0,0.25);
+      pointer-events: none;
+      z-index: 1000;
+      font-size: 0.9rem;
+      line-height: 1.35;
+      display: none;
+    }
+    .legend {
+      margin-top: 40px;
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.95rem;
+      color: #444;
+    }
+    .legend-swatch {
+      width: 18px;
+      height: 18px;
+      border-radius: 4px;
+      border: 1px solid #ccc;
+    }
+  </style>
+</head>
+<body>
+  <h1>Subjective Speech Intelligibility Assessment</h1>
+  <div class="instructions">
+    Hover over a seat to see the sentence for that position. Seats are colored by score / grade from 1 to 4.
+  </div>
+  <div class="chart" id="chart"></div>
+  <div id="global-tooltip"></div>
+  <div class="legend">
+    <div class="legend-item"><span class="legend-swatch" style="background:#e14c4c"></span>1</div>
+    <div class="legend-item"><span class="legend-swatch" style="background:#f28c3f"></span>2</div>
+    <div class="legend-item"><span class="legend-swatch" style="background:#f7d34a"></span>3</div>
+    <div class="legend-item"><span class="legend-swatch" style="background:#70b96d"></span>4</div>
+    <div class="legend-item"><span class="legend-swatch" style="background:#f1f1f1; border-style:dashed"></span>No data</div>
+  </div>
+  <script>
+    const seatData = [
+      { row: 6, seat: 6, score: '2', sentence: 'the quick brown fox jumps over a lazy dog' },
+      { row: 4, seat: 3, score: '4', sentence: 'The quick beown fox jumps over the lazy dog' },
+      { row: 5, seat: 16, score: '3,5', sentence: '"The quick brown fox jumps over lazy dog."' },
+      { row: 3, seat: 20, score: '3,5', sentence: 'The quick brown fox jumps over the lazy dog.' },
+      { row: 1, seat: 8, score: '4', sentence: 'The quick brown fox jumps over the lazy dog.' },
+      { row: 2, seat: 3, score: '4', sentence: 'The quick brown fox jumps over the lazy dog' },
+      { row: 4, seat: 16, score: '3', sentence: 'The quick brown fox jumps over a lazy dog.' },
+      { row: 5, seat: 1, score: '3', sentence: 'The quick brown fox jumps over the lazy dog' },
+      { row: 4, seat: 7, score: '3', sentence: 'The quick brown fox jumps over the lazy dog.' },
+      { row: 5, seat: 20, score: '3', sentence: 'the quick brown fox jumps over the lazy dog' },
+      { row: 3, seat: 15, score: '2,5', sentence: 'The … (long, brown?) fox jumps over the lazy dog' },
+      { row: 3, seat: 12, score: '3', sentence: 'The quick grand fox jumps over a lazy dog (the audio was bad quality)' },
+      { row: 7, seat: 16, score: '3', sentence: 'The … fox, jumps over the lazy dog.' },
+      { row: 5, seat: 13, score: '3', sentence: 'The … … fox jumps over the lazy dog' },
+      { row: 7, seat: 4, score: '2', sentence: 'The quick fox jumps over the dog (?)' },
+      { row: 5, seat: 7, score: '2', sentence: 'the quick round dog jumps over the lazy dog' },
+      { row: 6, seat: 5, score: '2', sentence: 'The quick round fogs jumps over the lazy dogs.' },
+      { row: 3, seat: 10, score: '1,5', sentence: '… red fox jumps over the lazy dog' },
+      { row: 7, seat: 8, score: '2,5', sentence: '… jumps over the lazy dog' },
+      { row: 6, seat: 1, score: '3', sentence: 'A fox that jumps a dog' },
+      { row: 4, seat: 17, score: '3', sentence: '… fox jumps over the lazy dog' },
+      { row: 6, seat: 20, score: '2', sentence: 'fox jumps over lazy dog' },
+      { row: 7, seat: 2, score: '2', sentence: 'Angry frog? jumps over the lazy duck.' },
+      { row: 7, seat: 6, score: '2', sentence: 'quick brown fox the jam is over lazy dog.' },
+      { row: 5, seat: 17, score: '2', sentence: 'Something …, jumps over the lazy dog.' },
+      { row: 1, seat: 13, score: '2', sentence: 'The quick grand fox jumps over the duck' },
+      { row: 1, seat: 17, score: '2', sentence: 'The quick brown ? lazy the dog?' },
+      { row: 6, seat: 19, score: '2', sentence: 'fox jump over lazy dog' }
+    ];
+
+    const rows = [1, 2, 3, 4, 5, 6, 7];
+    const seatsPerRow = 20;
+    const rowNames = {1:'I',2:'II',3:'III',4:'IV',5:'V',6:'VI',7:'VII'};
+    const rowSeatCounts = { 1: 18 };
+
+    const dataMap = new Map();
+    seatData.forEach(item => {
+      const scoreValue = parseFloat(item.score.replace(',', '.'));
+      dataMap.set(`${item.row}-${item.seat}`, {
+        ...item,
+        scoreValue,
+        gradeLabel: scoreValue ? scoreValue.toFixed(scoreValue % 1 === 0 ? 0 : 1) : null
+      });
+    });
+
+    function getColor(score) {
+      if (score === null || isNaN(score)) return '#f1f1f1';
+      if (score <= 1.5) return '#e14c4c';
+      if (score <= 2.5) return '#f28c3f';
+      if (score <= 3.5) return '#f7d34a';
+      return '#70b96d';
+    }
+
+    function createSpacerSeat() {
+      const spacer = document.createElement('div');
+      spacer.className = 'seat spacer';
+      spacer.innerHTML = '&nbsp;';
+      return spacer;
+    }
+
+    const reference = ['The', 'quick', 'brown', 'fox', 'jumps', 'over', 'the', 'lazy', 'dog'];
+
+    function highlightSentence(answer) {
+      const answerWords = new Set(answer.toLowerCase().replace(/[^a-z\s]/g, '').split(/\s+/));
+      return reference.map(word => {
+        const color = answerWords.has(word.toLowerCase()) ? '#70b96d' : '#e14c4c';
+        return `<span style="color:${color};font-weight:bold">${word}</span>`;
+      }).join(' ') + '.';
+    }
+
+    const tooltip = document.getElementById('global-tooltip');
+
+    const chart = document.getElementById('chart');
+    rows.forEach(rowNumber => {
+      const rowDiv = document.createElement('div');
+      rowDiv.className = 'row';
+      const label = document.createElement('div');
+      label.className = 'row-label';
+      label.textContent = rowNames[rowNumber] || rowNumber;
+      rowDiv.appendChild(label);
+
+      const seatCount = rowSeatCounts[rowNumber] || seatsPerRow;
+      if (rowNumber === 1) {
+        rowDiv.appendChild(createSpacerSeat());
+      }
+      for (let seatNum = 1; seatNum <= seatCount; seatNum++) {
+        const seatKey = `${rowNumber}-${seatNum}`;
+        const item = dataMap.get(seatKey);
+        const seat = document.createElement('div');
+        seat.className = 'seat';
+
+        if (!item) {
+          seat.classList.add('empty');
+        } else {
+          seat.style.background = getColor(item.scoreValue);
+          const grade = document.createElement('div');
+          grade.className = 'grade';
+          grade.textContent = item.gradeLabel;
+          seat.appendChild(grade);
+
+          seat.addEventListener('mouseenter', () => {
+            tooltip.innerHTML = highlightSentence(item.sentence) + `<div style="margin-top:8px;color:#fff;font-style:italic">${item.sentence}</div>`;
+            tooltip.style.display = 'block';
+            const rect = seat.getBoundingClientRect();
+            tooltip.style.left = (rect.left + rect.width / 2 - tooltip.offsetWidth / 2) + 'px';
+            tooltip.style.top = (rect.top - tooltip.offsetHeight - 10) + 'px';
+          });
+          seat.addEventListener('mouseleave', () => {
+            tooltip.style.display = 'none';
+          });
+        }
+
+        rowDiv.appendChild(seat);
+      }
+      if (rowNumber === 1) {
+        rowDiv.appendChild(createSpacerSeat());
+      }
+      chart.appendChild(rowDiv);
+    });
+  </script>
+</body>
+</html>
