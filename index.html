@@ -119,14 +119,61 @@
       border-radius: 4px;
       border: 1px solid #ccc;
     }
+    .chart-scroll {
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+    @media (max-width: 768px) {
+      body {
+        padding: 16px 12px;
+      }
+      h1 {
+        font-size: 1.2rem;
+      }
+      .instructions {
+        white-space: normal;
+        max-width: 100%;
+        font-size: 0.85rem;
+        margin-bottom: 40px;
+      }
+      .row {
+        grid-template-columns: 40px repeat(20, minmax(28px, 1fr));
+        gap: 4px;
+      }
+      .chart {
+        gap: 4px;
+        min-width: 640px;
+      }
+      .seat {
+        min-height: 36px;
+        padding: 4px 2px 8px;
+      }
+      .seat .grade {
+        font-size: 0.75rem;
+      }
+      .row-label {
+        font-size: 0.85rem;
+        padding-right: 4px;
+      }
+      .legend {
+        justify-content: flex-start;
+        margin-top: 24px;
+      }
+      #global-tooltip {
+        width: 180px;
+        font-size: 0.82rem;
+      }
+    }
   </style>
 </head>
 <body>
   <h1>Subjective Speech Intelligibility Assessment</h1>
   <div class="instructions">
-    Hover over a seat to see the sentence for that position. Seats are colored by score / grade from 1 to 4.
+    Hover or tap a seat to see the sentence for that position. Seats are colored by score / grade from 1 to 4.
   </div>
-  <div class="chart" id="chart"></div>
+  <div class="chart-scroll">
+    <div class="chart" id="chart"></div>
+  </div>
   <div id="global-tooltip"></div>
   <div class="legend">
     <div class="legend-item"><span class="legend-swatch" style="background:#e14c4c"></span>1</div>
@@ -208,6 +255,29 @@
     }
 
     const tooltip = document.getElementById('global-tooltip');
+    let lockedSeatKey = null;
+    const isTouch = window.matchMedia('(hover: none)').matches;
+
+    function showTooltip(seat, item) {
+      tooltip.innerHTML = highlightSentence(item.sentence) + `<div style="margin-top:8px;color:#fff;font-style:italic">${item.sentence}</div>`;
+      tooltip.style.display = 'block';
+      const rect = seat.getBoundingClientRect();
+      const tw = tooltip.offsetWidth;
+      const th = tooltip.offsetHeight;
+      let left = rect.left + rect.width / 2 - tw / 2;
+      left = Math.max(8, Math.min(left, window.innerWidth - tw - 8));
+      const topAbove = rect.top - th - 10;
+      const top = topAbove >= 8 ? topAbove : rect.bottom + 10;
+      tooltip.style.left = left + 'px';
+      tooltip.style.top = top + 'px';
+    }
+
+    document.addEventListener('click', () => {
+      if (lockedSeatKey) {
+        lockedSeatKey = null;
+        tooltip.style.display = 'none';
+      }
+    });
 
     const chart = document.getElementById('chart');
     rows.forEach(rowNumber => {
@@ -237,15 +307,25 @@
           grade.textContent = item.gradeLabel;
           seat.appendChild(grade);
 
-          seat.addEventListener('mouseenter', () => {
-            tooltip.innerHTML = highlightSentence(item.sentence) + `<div style="margin-top:8px;color:#fff;font-style:italic">${item.sentence}</div>`;
-            tooltip.style.display = 'block';
-            const rect = seat.getBoundingClientRect();
-            tooltip.style.left = (rect.left + rect.width / 2 - tooltip.offsetWidth / 2) + 'px';
-            tooltip.style.top = (rect.top - tooltip.offsetHeight - 10) + 'px';
-          });
-          seat.addEventListener('mouseleave', () => {
-            tooltip.style.display = 'none';
+          if (!isTouch) {
+            seat.addEventListener('mouseenter', () => {
+              if (lockedSeatKey) return;
+              showTooltip(seat, item);
+            });
+            seat.addEventListener('mouseleave', () => {
+              if (lockedSeatKey) return;
+              tooltip.style.display = 'none';
+            });
+          }
+          seat.addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (lockedSeatKey === seatKey) {
+              lockedSeatKey = null;
+              tooltip.style.display = 'none';
+            } else {
+              lockedSeatKey = seatKey;
+              showTooltip(seat, item);
+            }
           });
         }
 
