@@ -22,11 +22,11 @@
     }
     .instructions {
       margin: 0 auto 64px;
-      max-width: max-content;
-      white-space: nowrap;
+      max-width: 680px;
       text-align: center;
       font-size: 0.95rem;
       color: #555;
+      line-height: 1.6;
     }
     .chart {
       display: grid;
@@ -133,7 +133,6 @@
       background: #ffffff;
       border: 1px solid #cccccc;
       border-radius: 4px;
-    }
     .chart-scroll {
       overflow-x: auto;
       overflow-y: visible;
@@ -149,7 +148,6 @@
         font-size: 1.2rem;
       }
       .instructions {
-        white-space: normal;
         max-width: 100%;
         font-size: 0.85rem;
         margin-bottom: 40px;
@@ -183,9 +181,14 @@
   <div class="container">
   <h1>Subjective Speech Intelligibility Assessment</h1>
   <div class="instructions">
-    Hover or tap a seat to see the sentence for that position. Seats are colored by score / grade from 1 to 4.
+    This experiment aimed to identify how well students seated throughout the auditorium could understand speech played over the speakers.
+    The sentence <em>"The quick brown fox jumps over the lazy dog."</em> was played twice in a row.
+    Each student wrote down what they heard and rated their comprehension on a scale from 1 to 4 —
+    where <strong>1</strong> means the speech was completely unintelligible and <strong>4</strong> means it was heard perfectly clearly.
+    <br><br>
+    The results are displayed on the diagram below. Hover or tap a seat to see what that student wrote.
   </div>
-  <p class="board-label">front of the auditorium</p>
+  <p class="board-label">Front of the auditorium</p>
   <div class="board"></div>
   <div class="chart-scroll">
     <div class="chart" id="chart"></div>
@@ -198,7 +201,7 @@
     <div class="legend-item"><span class="legend-swatch" style="background:#70b96d"></span>4</div>
     <div class="legend-item"><span class="legend-swatch" style="background:#ffffff; border-color:#cccccc;"></span>No data</div>
   </div>
-  <p class="board-label" style="text-align:center;margin-top:80px;">Created for Building Physics Class</p>
+  <p class="board-label" style="text-align:center;margin-top:80px;">Created for Building Physics Class 2026</p>
   </div>
   <script>
     const seatData = [
