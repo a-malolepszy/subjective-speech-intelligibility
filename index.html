@@ -100,7 +100,8 @@
       display: none;
     }
     .legend {
-      margin-top: 40px;
+      max-width: 1440px;
+      margin: 40px auto 0;
       display: flex;
       gap: 12px;
       flex-wrap: wrap;
@@ -193,10 +194,13 @@
   </div>
   <div id="global-tooltip"></div>
   <div class="legend">
-    <div class="legend-item"><span class="legend-swatch" style="background:#e14c4c"></span>1</div>
-    <div class="legend-item"><span class="legend-swatch" style="background:#f28c3f"></span>2</div>
-    <div class="legend-item"><span class="legend-swatch" style="background:#f7d34a"></span>3</div>
-    <div class="legend-item"><span class="legend-swatch" style="background:#70b96d"></span>4</div>
+    <div class="legend-item"><span class="legend-swatch" style="background:rgb(225,76,76)"></span>1</div>
+    <div class="legend-item"><span class="legend-swatch" style="background:rgb(234,108,70)"></span>1.5</div>
+    <div class="legend-item"><span class="legend-swatch" style="background:rgb(242,140,63)"></span>2</div>
+    <div class="legend-item"><span class="legend-swatch" style="background:rgb(245,176,69)"></span>2.5</div>
+    <div class="legend-item"><span class="legend-swatch" style="background:rgb(247,211,74)"></span>3</div>
+    <div class="legend-item"><span class="legend-swatch" style="background:rgb(180,198,92)"></span>3.5</div>
+    <div class="legend-item"><span class="legend-swatch" style="background:rgb(112,185,109)"></span>4</div>
     <div class="legend-item"><span class="legend-swatch" style="background:#ffffff; border-color:#cccccc;"></span>No data</div>
   </div>
   <p class="board-label" style="text-align:center;margin-top:80px;">Created for Building Physics Class 2026</p>
@@ -248,12 +252,28 @@
       });
     });
 
+    const colorStops = [
+      [1, [225, 76, 76]],
+      [2, [242, 140, 63]],
+      [3, [247, 211, 74]],
+      [4, [112, 185, 109]],
+    ];
+
     function getColor(score) {
       if (score === null || isNaN(score)) return '#f1f1f1';
-      if (score <= 1.5) return '#e14c4c';
-      if (score <= 2.5) return '#f28c3f';
-      if (score <= 3.5) return '#f7d34a';
-      return '#70b96d';
+      score = Math.max(1, Math.min(4, score));
+      for (let i = 0; i < colorStops.length - 1; i++) {
+        const [s1, c1] = colorStops[i];
+        const [s2, c2] = colorStops[i + 1];
+        if (score <= s2) {
+          const t = (score - s1) / (s2 - s1);
+          const r = Math.round(c1[0] + (c2[0] - c1[0]) * t);
+          const g = Math.round(c1[1] + (c2[1] - c1[1]) * t);
+          const b = Math.round(c1[2] + (c2[2] - c1[2]) * t);
+          return `rgb(${r},${g},${b})`;
+        }
+      }
+      return `rgb(${colorStops[3][1].join(',')})`;
     }
 
     function createSpacerSeat() {
