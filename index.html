@@ -34,7 +34,7 @@
     }
     .row {
       display: grid;
-      grid-template-columns: 64px repeat(20, clamp(28px, calc((100vw - 264px) / 20), 58px));
+      grid-template-columns: 64px repeat(20, minmax(28px, 1fr));
       gap: 8px;
       align-items: center;
     }
@@ -155,7 +155,7 @@
         margin-bottom: 40px;
       }
       .row {
-        grid-template-columns: 40px repeat(20, clamp(36px, calc((100vw - 144px) / 20), 58px));
+        grid-template-columns: 40px repeat(20, minmax(36px, 1fr));
         gap: 4px;
       }
       .chart {
