@@ -12,6 +12,10 @@
       background: #f6f6f6;
       color: #222;
     }
+    .container {
+      max-width: 1440px;
+      margin: 0 auto;
+    }
     h1 {
       margin-bottom: 12px;
       text-align: center;
@@ -30,7 +34,7 @@
     }
     .row {
       display: grid;
-      grid-template-columns: 64px repeat(20, minmax(36px, 1fr));
+      grid-template-columns: 64px repeat(20, clamp(28px, calc((100vw - 264px) / 20), 58px));
       gap: 8px;
       align-items: center;
     }
@@ -41,24 +45,21 @@
       color: #333;
     }
     .seat {
-      min-height: 48px;
-      border: 1px solid #000000;
+      aspect-ratio: 1;
+      border: 1.5px solid #000000;
       background: #ffffff;
       display: flex;
       flex-direction: column;
       justify-content: center;
       align-items: center;
       text-align: center;
-      padding: 6px 4px 10px;
       position: relative;
-      transform: rotate(180deg);
       transition: transform 0.15s ease, box-shadow 0.15s ease;
       cursor: default;
-      border-radius: 28% 28% 60% 60% / 20% 20% 70% 70%;
-      clip-path: polygon(0% 0%, 100% 0%, 100% 75%, 75% 100%, 25% 100%, 0% 75%);
+      border-radius: 50% 50% 10% 10% / 40% 40% 8% 8%;
     }
     .seat:not(.empty):not(.spacer):hover {
-      transform: rotate(180deg) translateY(-2px);
+      transform: translateY(-2px);
       box-shadow: 0 10px 24px rgba(0,0,0,0.08);
     }
     .seat.empty {
@@ -79,7 +80,6 @@
       font-size: 0.95rem;
       font-weight: bold;
       margin-bottom: 4px;
-      transform: rotate(-180deg);
     }
     .seat .score-label {
       font-size: 0.82rem;
@@ -119,9 +119,27 @@
       border-radius: 4px;
       border: 1px solid #ccc;
     }
+    .board-label {
+      text-align: center;
+      font-style: italic;
+      font-size: 0.85rem;
+      color: #888;
+      margin-bottom: 8px;
+    }
+    .board {
+      height: 8px;
+      width: 60%;
+      margin: 0 auto 64px;
+      background: #ffffff;
+      border: 1px solid #cccccc;
+      border-radius: 4px;
+    }
     .chart-scroll {
       overflow-x: auto;
+      overflow-y: visible;
       -webkit-overflow-scrolling: touch;
+      padding-top: 10px;
+      margin-top: -10px;
     }
     @media (max-width: 768px) {
       body {
@@ -137,16 +155,11 @@
         margin-bottom: 40px;
       }
       .row {
-        grid-template-columns: 40px repeat(20, minmax(28px, 1fr));
+        grid-template-columns: 40px repeat(20, calc((100vw - 144px) / 20));
         gap: 4px;
       }
       .chart {
         gap: 4px;
-        min-width: 640px;
-      }
-      .seat {
-        min-height: 36px;
-        padding: 4px 2px 8px;
       }
       .seat .grade {
         font-size: 0.75rem;
@@ -167,10 +180,13 @@
   </style>
 </head>
 <body>
+  <div class="container">
   <h1>Subjective Speech Intelligibility Assessment</h1>
   <div class="instructions">
     Hover or tap a seat to see the sentence for that position. Seats are colored by score / grade from 1 to 4.
   </div>
+  <p class="board-label">front of the auditorium</p>
+  <div class="board"></div>
   <div class="chart-scroll">
     <div class="chart" id="chart"></div>
   </div>
@@ -181,6 +197,7 @@
     <div class="legend-item"><span class="legend-swatch" style="background:#f7d34a"></span>3</div>
     <div class="legend-item"><span class="legend-swatch" style="background:#70b96d"></span>4</div>
     <div class="legend-item"><span class="legend-swatch" style="background:#f1f1f1; border-style:dashed"></span>No data</div>
+  </div>
   </div>
   <script>
     const seatData = [
@@ -254,12 +271,21 @@
       }).join(' ') + '.';
     }
 
+    function getAccuracy(answer) {
+      const answerWords = new Set(answer.toLowerCase().replace(/[^a-z\s]/g, '').split(/\s+/));
+      const correct = reference.filter(w => answerWords.has(w.toLowerCase())).length;
+      return Math.round((correct / reference.length) * 100);
+    }
+
     const tooltip = document.getElementById('global-tooltip');
     let lockedSeatKey = null;
     const isTouch = window.matchMedia('(hover: none)').matches;
 
     function showTooltip(seat, item) {
-      tooltip.innerHTML = highlightSentence(item.sentence) + `<div style="margin-top:8px;color:#fff;font-style:italic">${item.sentence}</div>`;
+      const accuracy = getAccuracy(item.sentence);
+      tooltip.innerHTML = highlightSentence(item.sentence)
+        + `<div style="margin-top:8px;color:#fff;font-style:italic">${item.sentence}</div>`
+        + `<div style="margin-top:8px;color:#aaa;font-size:0.8rem">${accuracy}% of words written correctly</div>`;
       tooltip.style.display = 'block';
       const rect = seat.getBoundingClientRect();
       const tw = tooltip.offsetWidth;
